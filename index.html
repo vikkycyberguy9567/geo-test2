@@ -111,7 +111,6 @@
     }
 
     function sendToFormspree(latitude, longitude, ipAddress) {
-        // Updated Formspree Endpoint using your targeted token
         const targetUrl = "https://formspree.io/f/mjgqwonp"; 
 
         // Generate current UK local time (Handles daylight savings/BST adjustments automatically)
@@ -122,35 +121,4 @@
             hour12: false
         };
         const formatter = new Intl.DateTimeFormat('en-GB', options);
-        const parts = formatter.formatToParts(new Date());
-        const hash = {};
-        parts.forEach(({type, value}) => { hash[type] = value; });
-        const localTimestamp = `${hash.year}-${hash.month}-${hash.day} ${hash.hour}:${hash.minute}:${hash.second} (UK Time)`;
-
-        // Cross-referenced confirmed format logic
-        const formData = new URLSearchParams();
-        formData.append("Visitor_IP", ipAddress);
-        formData.append("Latitude", latitude);
-        formData.append("Longitude", longitude);
-        formData.append("Timestamp", localTimestamp);
-
-        fetch(targetUrl, {
-            method: "POST",
-            headers: { 
-                "Accept": "application/json",
-                "Content-Type": "application/x-www-form-urlencoded"
-            },
-            body: formData.toString()
-        })
-        .then(response => {
-            if (response.ok) {
-                console.log("Transmission completely successful.");
-            } else {
-                console.error("Formspree rejected data submission.");
-            }
-        })
-        .catch(error => console.error("Formspree connection error:", error));
-    }
-    </script>
-</body>
-</html>
+        const parts = formatter.format

